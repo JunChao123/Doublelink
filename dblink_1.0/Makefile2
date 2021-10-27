@@ -1,0 +1,16 @@
+LIB_NAME=-ldblink
+LIB_PATH=-L ./
+BIN_NAME=dblink
+
+all:lib main_out
+	gcc -o $(BIN_NAME) dbmain.o $(LIB_NAME) $(LIB_PATH)
+
+lib:dblink_out
+	ar -cr libdblink.a dblink.o
+
+dblink_out:
+	gcc -c dblink.c
+
+main_out:
+	gcc -c dbmain.c
+	
