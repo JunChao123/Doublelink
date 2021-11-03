@@ -1,161 +1,354 @@
 #include<stdio.h>
 #include<stdlib.h>
+#include<stdbool.h>
 #include"dblink.h"
 /*
 typedef struct Linknode{
-	struct Linknode *prior;
-	void *value;
-	struct Linknode *next;
-}linknd;
+        struct Linknode *prior;
+        void *value;
+        struct Linknode *next;
+}LinkNode_s;
 
-typedef struct Linkhead{
-	linknd  *head;
-	char linklength;
-}linkhead;
+typedef struct Linkhome{
+        LinkNode_s  *head;
+        int linklength;
+        LinkNode_s *tail;
+}LinkHome_s;
 
-typedef enum insertreturn{
-	INSERT_OK,
-	INSERT_FIAL
-}instrt;
+typedef enum operatereturn{
+        OK,
+        APPLY_FAIL,   //内存申请失败
+        ILLEGAL_DATA //位置参数或头指针非法
 
-typedef enum deletereturn{
-        DELETE_OK,
-        DELETE_FIAL
-}delrt;
+}OperateReturn_e;
 
-//typedef void (*listlink)(void *);
+typedef void (*_ListLink_f)(void *);
+
 */
 
-linkhead *initlink(){
-	linkhead *headp = (linkhead *)malloc(sizeof(linkhead));
-	headp->head = (linknd *)malloc(sizeof(linknd));
-	if(headp == NULL||headp->head == NULL){
+LinkHome_s *_InitLink()
+{
+	LinkHome_s *link_p = (LinkHome_s *)malloc(sizeof(LinkHome_s));
+	if(link_p == NULL)
+	{
 		return NULL;
 	}
-	headp->linklength = 0;
-	headp->head->next = NULL;
-	return headp;
+	link_p->linklength = 0;
+	link_p->head = NULL;
+	link_p->tail = NULL;
+
+
+	link_p->head = (LinkNode_s *)malloc(sizeof(LinkNode_s));
+	if(link_p->head == NULL)
+	{
+		free(link_p);
+		return NULL;
+	}
+	link_p->head->prior = NULL;
+	link_p->head->value = 0;
+	link_p->head->next = NULL;
+
+
+	link_p->tail = (LinkNode_s *)malloc(sizeof(LinkNode_s));
+	if(link_p->tail == NULL)
+	{
+		free(link_p->head);
+		free(link_p);
+		return NULL;
+	}
+	link_p->tail->prior = link_p->head;	
+	link_p->tail->value = 0;
+	link_p->tail->next = NULL;
+	link_p->head->next = link_p->tail;
+	return link_p;
 }
 
 
-static linknd *nodecreate(void *value){
-	linknd *newnode = (linknd *)malloc(sizeof(linknd));
-	if(newnode == NULL){
+static LinkNode_s *_NodeCreate(void *value)
+{
+	LinkNode_s *newnode_p = (LinkNode_s *)malloc(sizeof(LinkNode_s));
+	if(newnode_p == NULL)
+	{
 		return NULL;
 	}
 
-	newnode->prior = NULL;
-	newnode->next = NULL;
-	newnode->value = value;
-	//printf("nodecreate");
-	return newnode;
+	newnode_p->prior = NULL;
+	newnode_p->next = NULL;
+	newnode_p->value = value;
+	//printf("_NodeCreate");
+	return newnode_p;
 }
 
 
-static linknd *getsite(linkhead *headp, int site){
-	linknd *sitep = headp->head;
-	if(site < 0||site > (headp->linklength)){
+static LinkNode_s *_GetSite(LinkHome_s *link_p, int site)
+{
+	LinkNode_s *site_p = link_p->head;
+	if(site_p == NULL)
+	{
+		return NULL;
+	}
+	/*LinkNode_s *tail_p = link_p->tail;
+	if(tail_p == NULL)
+	{
+		return NULL;
+	}*/
+	if(site < 0||site > (link_p->linklength))
+	{
 		return NULL;
 	}
 	//printf("site:%d\t",site);
-	while(site>0){
-		sitep = sitep->next;
+	while(site>0)
+	{
+		site_p = site_p->next;
 		site--;
 	}
 	
-	return sitep;
+	return site_p;
 
 }
 
 
-instrt insert(linkhead *headp, int site, void *value){
-	linknd *insertp = getsite(headp, site);
-	linknd *newinsertnd = nodecreate(value);
-	if(insertp == NULL||newinsertnd ==NULL){
-		return INSERT_FAIL;
+OperateReturn_e _InsertSite(LinkHome_s *link_p, int site, void *value)
+{
+	LinkNode_s *insert_p = _GetSite(link_p, site);
+	if(insert_p == NULL)
+	{
+		return ILLEGAL_DATA;
+	}
+	LinkNode_s *tail_p = link_p->tail;
+	if(tail_p == NULL)
+	{
+		return INIT_FAIL;
+	}
+	LinkNode_s *newnode_p = _NodeCreate(value);
+	if(newnode_p == NULL)
+	{
+		return APPLY_FAIL;
 	}
 
-	if(insertp->next == NULL){
-		insertp->next = newinsertnd;
-		newinsertnd->prior = insertp;
-		(headp->linklength)++;
-		return INSERT_OK;
+	if(insert_p->next == tail_p)
+	{
+		insert_p->next = newnode_p;
+		newnode_p->prior = insert_p;
+		newnode_p->next = tail_p;
+		tail_p->prior = newnode_p;
+		(link_p->linklength)++;
+		return OK;
 	}
 
-	newinsertnd->next = insertp->next;
-	insertp->prior = newinsertnd;
-	insertp->next = newinsertnd;
-	newinsertnd->prior = insertp;
-	(headp->linklength)++;
-	printf("在第%d节点插入完成!\n",site);
-	return INSERT_OK;
+	newnode_p->next = insert_p->next;
+	insert_p->next->prior = newnode_p;
+	insert_p->next = newnode_p;
+	newnode_p->prior = insert_p;
+	(link_p->linklength)++;
+	//printf("在第%d节点插入完成!\n",site);
+	return OK;
 }
 
 
-instrt inserttail(linkhead *headp, void *value){
-	linknd *instailp = getsite(headp,(headp->linklength));
-	linknd *newnodep = nodecreate(value);
-	if(instailp == NULL||newnodep ==NULL){
-                return INSERT_FAIL;
+OperateReturn_e _InsertTail(LinkHome_s *link_p, void *value)
+{
+	LinkNode_s *inserttail_p = _GetSite(link_p,(link_p->linklength));
+	if(inserttail_p == NULL)
+        {
+                 return ILLEGAL_DATA;
         }
+	LinkNode_s *newnode_p = _NodeCreate(value);
+	if(newnode_p == NULL)
+	{
+                return APPLY_FAIL;
+        }
+	LinkNode_s *tail_p = link_p->tail;
+	if(tail_p == NULL)
+	{
+		return INIT_FAIL;
+	}
+
+	inserttail_p->next = newnode_p;
+	newnode_p->prior = inserttail_p;
+	newnode_p->next = tail_p;
+	tail_p->prior = newnode_p;
+	(link_p->linklength)++;
+	return OK;
+
+}
+
+
+OperateReturn_e _FindSiteValue(LinkHome_s *link_p, int site, _ListLink_f _PrintLink_f)
+{
+	LinkNode_s *find_p = _GetSite(link_p, site);
+	if(find_p == link_p->head)
+	{
+		return ILLEGAL_DATA;
+	}
+	if(find_p == NULL)
+	{
+		return ILLEGAL_DATA;
+	}
 	
-	instailp->next = newnodep;
-	newnodep->prior = instailp;
-	(headp->linklength)++;
-	return INSERT_OK;
-
+	_PrintLink_f(find_p->value);
+	return OK;
 }
 
 
-void *find_site_value(linkhead *headp, int site){
-	linknd *findp = getsite(headp, site);
-	return findp->value;
+OperateReturn_e _ShowHeadLink(LinkHome_s *link_p,  _ListLink_f _PrintLink_f)
+{
+	if(link_p == NULL)
+	{
+		return ILLEGAL_DATA;
+	}
+
+	LinkNode_s * showhead_p = link_p->head->next;
+	while(showhead_p != link_p->tail)
+	{
+		_PrintLink_f(showhead_p->value);
+		showhead_p = showhead_p->next;
+	}	
+	//printf("链表打印已完成！\n");
 }
 
 
-void traverse(linkhead *headp, listlink printlink){
-	linknd * traverp = headp->head->next;
-	int len = (headp->linklength);
-	while(len > 0){
-		printlink(traverp->value);
-		traverp = traverp->next;
-		len--;
+OperateReturn_e _ShowTailLink(LinkHome_s *link_p,  _ListLink_f _PrintLink_f)
+{
+	if(link_p == NULL)
+	{
+		return ILLEGAL_DATA;
 	}
-	printf("链表打印已完成！\n");
+
+	LinkNode_s * showtail_p = link_p->tail->prior;
+	while(showtail_p != link_p->head)
+	{
+		_PrintLink_f(showtail_p->value);
+		showtail_p = showtail_p->prior;
+	}
+
+}
+
+OperateReturn_e _DeleteNode(LinkHome_s *link_p, int site, _ListLink_f _FreeDefine_f)
+{
+	LinkNode_s *delete_p = _GetSite(link_p,site);
+	if(delete_p == NULL)
+	{
+		return ILLEGAL_DATA;
+	}
+	if(delete_p == link_p->head)
+	{
+		return ILLEGAL_DATA;
+	}
+	LinkNode_s *tail_p = link_p->tail;
+	if(tail_p == NULL)
+	{
+		return INIT_FAIL;
+	}	
+
+	if(delete_p->next == link_p->tail)
+	{
+		delete_p->prior->next = tail_p;
+		tail_p->prior = delete_p->prior; 
+		(link_p->linklength)--;
+		_FreeDefine_f(delete_p);
+		return OK;
+	}
+	delete_p->prior->next = delete_p->next;
+	delete_p->next->prior = delete_p->prior;
+	(link_p->linklength)--;
+	_FreeDefine_f(delete_p);
+	//printf("第%d节点删除完成\n",site);
+	return OK;
+}
+
+OperateReturn_e _DestoryLink(LinkHome_s *link_p, _ListLink_f _FreeDefine_f)
+{
+	if(link_p == NULL)
+	{
+		return ILLEGAL_DATA;
+	}	
+
+	LinkNode_s *destory_p = link_p->head->next;
+	LinkNode_s *tmp_p = NULL;
+	while(destory_p != link_p->tail)
+	{
+		tmp_p = destory_p->next;
+		_FreeDefine_f(destory_p);
+		//free(destory_p);
+		destory_p = tmp_p;
+	}
+	free(link_p->head);
+	free(link_p->tail);
+	free(link_p);
+	//printf("链表已销毁!\n");
+}
+
+static LinkNode_s * _Sortfun(LinkNode_s *quicklow_p, LinkNode_s *quickhigh_p, _Compare_f _CompareSort_f)
+{
+	LinkNode_s *quickhead_p = quicklow_p;
+	LinkNode_s *quicktail_p = quickhigh_p;
+	//bool compare_result = false;
+	void *midvalue = NULL;
+	midvalue = quickhead_p->value;
+	
+	while(quickhead_p != quicktail_p)
+	{
+		bool compare_result = false;
+		compare_result = _CompareSort_f(midvalue, quicktail_p->value);
+		while( (quickhead_p != quicktail_p) && compare_result)
+		{
+			quicktail_p = quicktail_p->prior;
+			compare_result = _CompareSort_f(midvalue, quicktail_p->value);
+		}
+		void * tmp = NULL;
+		tmp = quicktail_p->value;
+		quicktail_p->value = quickhead_p->value;
+		quickhead_p->value = tmp;
+		if(quickhead_p != quicktail_p)
+		{
+			quickhead_p = quickhead_p->next;
+		}
+		
+		/*compare_result = _CompareSort_f(midvalue, quickhead_p->value);
+		while( (quickhead_p != quicktail_p) && !compare_result)
+		{
+			quickhead_p = quickhead_p->next;
+			compare_result = _CompareSort_f(midvalue, quickhead_p->value);
+		}
+		tmp = quicktail_p->value;
+		quicktail_p->value = quickhead_p->value;
+		quickhead_p->value = tmp;*/
+	}
+	return quickhead_p;
 }
 
 
-delrt _delete(linkhead *headp, int site){
-	linknd *deletep = getsite(headp,site);
-	if(deletep == NULL){
-		return DELETE_FAIL;
+OperateReturn_e _QuickSort(LinkNode_s *quickhead_p,  LinkNode_s *quicktail_p, _Compare_f _CompareSort_f)
+{
+	if(quickhead_p == NULL)
+	{
+		return ILLEGAL_DATA;
 	}
-
-	if(deletep->next == NULL){
-		deletep->prior->next = NULL;
-		(headp->linklength)--;
-		free(deletep);
-		return DELETE_OK;
+	if(quicktail_p == NULL)
+	{
+		return ILLEGAL_DATA;
 	}
-	deletep->prior->next = deletep->next;
-	deletep->next->prior = deletep->prior;
-	(headp->linklength)--;
-	free(deletep);
-	printf("第%d节点删除完成\n",site);
-	return DELETE_OK;
-}
-
-
-void _destory(linkhead *headp){
-	linknd *dstyp = headp->head->next;
-	linknd *tmp = NULL;
-	while(dstyp != NULL){
-		tmp = dstyp->next;
-		free(dstyp);
-		dstyp = tmp;
+		
+	if(quickhead_p != quicktail_p)
+	{
+		LinkNode_s *loop_p = _Sortfun(quickhead_p, quicktail_p, _CompareSort_f);
+	
+		if(loop_p != quickhead_p)
+		{
+			_QuickSort(quickhead_p, loop_p, _CompareSort_f);	
+		}
+		if(loop_p == quickhead_p)
+		{
+			_QuickSort(loop_p->next, quicktail_p, _CompareSort_f);
+		}
+		else
+		{
+			_QuickSort(loop_p, quicktail_p, _CompareSort_f);
+		}
 	}
-	free(headp->head);
-	free(headp);
-	printf("链表已销毁!\n");
+	
+	return OK;
+
 }
 
