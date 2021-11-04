@@ -2,31 +2,9 @@
 #include<stdlib.h>
 #include<stdbool.h>
 #include"dblink.h"
-/*
-typedef struct Linknode{
-        struct Linknode *prior;
-        void *value;
-        struct Linknode *next;
-}LinkNode_s;
 
-typedef struct Linkhome{
-        LinkNode_s  *head;
-        int linklength;
-        LinkNode_s *tail;
-}LinkHome_s;
 
-typedef enum operatereturn{
-        OK,
-        APPLY_FAIL,   //内存申请失败
-        ILLEGAL_DATA //位置参数或头指针非法
-
-}OperateReturn_e;
-
-typedef void (*_ListLink_f)(void *);
-
-*/
-
-LinkHome_s *_InitLink()
+LinkHome_s *initLink()
 {
 	LinkHome_s *link_p = (LinkHome_s *)malloc(sizeof(LinkHome_s));
 	if(link_p == NULL)
@@ -64,7 +42,7 @@ LinkHome_s *_InitLink()
 }
 
 
-static LinkNode_s *_NodeCreate(void *value)
+static LinkNode_s *nodeCreate(void *value)
 {
 	LinkNode_s *newnode_p = (LinkNode_s *)malloc(sizeof(LinkNode_s));
 	if(newnode_p == NULL)
@@ -75,12 +53,12 @@ static LinkNode_s *_NodeCreate(void *value)
 	newnode_p->prior = NULL;
 	newnode_p->next = NULL;
 	newnode_p->value = value;
-	//printf("_NodeCreate");
+	//printf("nodeCreate");
 	return newnode_p;
 }
 
 
-static LinkNode_s *_GetSite(LinkHome_s *link_p, int site)
+static LinkNode_s *getSite(LinkHome_s *link_p, int site)
 {
 	LinkNode_s *site_p = link_p->head;
 	if(site_p == NULL)
@@ -108,9 +86,9 @@ static LinkNode_s *_GetSite(LinkHome_s *link_p, int site)
 }
 
 
-OperateReturn_e _InsertSite(LinkHome_s *link_p, int site, void *value)
+OperateReturn_e insertSite(LinkHome_s *link_p, int site, void *value)
 {
-	LinkNode_s *insert_p = _GetSite(link_p, site);
+	LinkNode_s *insert_p = getSite(link_p, site);
 	if(insert_p == NULL)
 	{
 		return ILLEGAL_DATA;
@@ -120,10 +98,14 @@ OperateReturn_e _InsertSite(LinkHome_s *link_p, int site, void *value)
 	{
 		return INIT_FAIL;
 	}
-	LinkNode_s *newnode_p = _NodeCreate(value);
+	LinkNode_s *newnode_p = nodeCreate(value);
 	if(newnode_p == NULL)
 	{
 		return APPLY_FAIL;
+	}
+	if(value == NULL)
+	{
+		return ILLEGAL_DATA;
 	}
 
 	if(insert_p->next == tail_p)
@@ -146,14 +128,14 @@ OperateReturn_e _InsertSite(LinkHome_s *link_p, int site, void *value)
 }
 
 
-OperateReturn_e _InsertTail(LinkHome_s *link_p, void *value)
+OperateReturn_e insertTail(LinkHome_s *link_p, void *value)
 {
-	LinkNode_s *inserttail_p = _GetSite(link_p,(link_p->linklength));
+	LinkNode_s *inserttail_p = getSite(link_p,(link_p->linklength));
 	if(inserttail_p == NULL)
         {
                  return ILLEGAL_DATA;
         }
-	LinkNode_s *newnode_p = _NodeCreate(value);
+	LinkNode_s *newnode_p = nodeCreate(value);
 	if(newnode_p == NULL)
 	{
                 return APPLY_FAIL;
@@ -162,6 +144,10 @@ OperateReturn_e _InsertTail(LinkHome_s *link_p, void *value)
 	if(tail_p == NULL)
 	{
 		return INIT_FAIL;
+	}
+	if(value == NULL)
+	{
+		return ILLEGAL_DATA;
 	}
 
 	inserttail_p->next = newnode_p;
@@ -174,9 +160,9 @@ OperateReturn_e _InsertTail(LinkHome_s *link_p, void *value)
 }
 
 
-OperateReturn_e _FindSiteValue(LinkHome_s *link_p, int site, _ListLink_f _PrintLink_f)
+OperateReturn_e findSiteValue(LinkHome_s *link_p, int site, listLink_f printLink_f)
 {
-	LinkNode_s *find_p = _GetSite(link_p, site);
+	LinkNode_s *find_p = getSite(link_p, site);
 	if(find_p == link_p->head)
 	{
 		return ILLEGAL_DATA;
@@ -186,12 +172,12 @@ OperateReturn_e _FindSiteValue(LinkHome_s *link_p, int site, _ListLink_f _PrintL
 		return ILLEGAL_DATA;
 	}
 	
-	_PrintLink_f(find_p->value);
+	printLink_f(find_p->value);
 	return OK;
 }
 
 
-OperateReturn_e _ShowHeadLink(LinkHome_s *link_p,  _ListLink_f _PrintLink_f)
+OperateReturn_e showHeadLink(LinkHome_s *link_p,  listLink_f printLink_f)
 {
 	if(link_p == NULL)
 	{
@@ -201,14 +187,14 @@ OperateReturn_e _ShowHeadLink(LinkHome_s *link_p,  _ListLink_f _PrintLink_f)
 	LinkNode_s * showhead_p = link_p->head->next;
 	while(showhead_p != link_p->tail)
 	{
-		_PrintLink_f(showhead_p->value);
+		printLink_f(showhead_p->value);
 		showhead_p = showhead_p->next;
 	}	
 	//printf("链表打印已完成！\n");
 }
 
 
-OperateReturn_e _ShowTailLink(LinkHome_s *link_p,  _ListLink_f _PrintLink_f)
+OperateReturn_e showTailLink(LinkHome_s *link_p,  listLink_f printLink_f)
 {
 	if(link_p == NULL)
 	{
@@ -218,15 +204,15 @@ OperateReturn_e _ShowTailLink(LinkHome_s *link_p,  _ListLink_f _PrintLink_f)
 	LinkNode_s * showtail_p = link_p->tail->prior;
 	while(showtail_p != link_p->head)
 	{
-		_PrintLink_f(showtail_p->value);
+		printLink_f(showtail_p->value);
 		showtail_p = showtail_p->prior;
 	}
 
 }
 
-OperateReturn_e _DeleteNode(LinkHome_s *link_p, int site, _ListLink_f _FreeDefine_f)
+OperateReturn_e deleteNode(LinkHome_s *link_p, int site, listLink_f freeDefine_f)
 {
-	LinkNode_s *delete_p = _GetSite(link_p,site);
+	LinkNode_s *delete_p = getSite(link_p,site);
 	if(delete_p == NULL)
 	{
 		return ILLEGAL_DATA;
@@ -239,25 +225,25 @@ OperateReturn_e _DeleteNode(LinkHome_s *link_p, int site, _ListLink_f _FreeDefin
 	if(tail_p == NULL)
 	{
 		return INIT_FAIL;
-	}	
+	}
 
 	if(delete_p->next == link_p->tail)
 	{
 		delete_p->prior->next = tail_p;
 		tail_p->prior = delete_p->prior; 
 		(link_p->linklength)--;
-		_FreeDefine_f(delete_p);
+		freeDefine_f(delete_p);
 		return OK;
 	}
 	delete_p->prior->next = delete_p->next;
 	delete_p->next->prior = delete_p->prior;
 	(link_p->linklength)--;
-	_FreeDefine_f(delete_p);
+	freeDefine_f(delete_p);
 	//printf("第%d节点删除完成\n",site);
 	return OK;
 }
 
-OperateReturn_e _DestoryLink(LinkHome_s *link_p, _ListLink_f _FreeDefine_f)
+OperateReturn_e destoryLink(LinkHome_s *link_p, listLink_f freeDefine_f)
 {
 	if(link_p == NULL)
 	{
@@ -269,8 +255,7 @@ OperateReturn_e _DestoryLink(LinkHome_s *link_p, _ListLink_f _FreeDefine_f)
 	while(destory_p != link_p->tail)
 	{
 		tmp_p = destory_p->next;
-		_FreeDefine_f(destory_p);
-		//free(destory_p);
+		freeDefine_f(destory_p);
 		destory_p = tmp_p;
 	}
 	free(link_p->head);
@@ -279,22 +264,21 @@ OperateReturn_e _DestoryLink(LinkHome_s *link_p, _ListLink_f _FreeDefine_f)
 	//printf("链表已销毁!\n");
 }
 
-static LinkNode_s * _Sortfun(LinkNode_s *quicklow_p, LinkNode_s *quickhigh_p, _Compare_f _CompareSort_f)
+static LinkNode_s * sortfun(LinkNode_s *quicklow_p, LinkNode_s *quickhigh_p, compare_f compareSort_f)
 {
 	LinkNode_s *quickhead_p = quicklow_p;
 	LinkNode_s *quicktail_p = quickhigh_p;
-	//bool compare_result = false;
 	void *midvalue = NULL;
 	midvalue = quickhead_p->value;
 	
 	while(quickhead_p != quicktail_p)
 	{
 		bool compare_result = false;
-		compare_result = _CompareSort_f(midvalue, quicktail_p->value);
+		compare_result = compareSort_f(midvalue, quicktail_p->value);
 		while( (quickhead_p != quicktail_p) && compare_result)
 		{
 			quicktail_p = quicktail_p->prior;
-			compare_result = _CompareSort_f(midvalue, quicktail_p->value);
+			compare_result = compareSort_f(midvalue, quicktail_p->value);
 		}
 		void * tmp = NULL;
 		tmp = quicktail_p->value;
@@ -305,21 +289,12 @@ static LinkNode_s * _Sortfun(LinkNode_s *quicklow_p, LinkNode_s *quickhigh_p, _C
 			quickhead_p = quickhead_p->next;
 		}
 		
-		/*compare_result = _CompareSort_f(midvalue, quickhead_p->value);
-		while( (quickhead_p != quicktail_p) && !compare_result)
-		{
-			quickhead_p = quickhead_p->next;
-			compare_result = _CompareSort_f(midvalue, quickhead_p->value);
-		}
-		tmp = quicktail_p->value;
-		quicktail_p->value = quickhead_p->value;
-		quickhead_p->value = tmp;*/
 	}
 	return quickhead_p;
 }
 
 
-OperateReturn_e _QuickSort(LinkNode_s *quickhead_p,  LinkNode_s *quicktail_p, _Compare_f _CompareSort_f)
+OperateReturn_e quickSort(LinkNode_s *quickhead_p,  LinkNode_s *quicktail_p, compare_f compareSort_f)
 {
 	if(quickhead_p == NULL)
 	{
@@ -332,19 +307,19 @@ OperateReturn_e _QuickSort(LinkNode_s *quickhead_p,  LinkNode_s *quicktail_p, _C
 		
 	if(quickhead_p != quicktail_p)
 	{
-		LinkNode_s *loop_p = _Sortfun(quickhead_p, quicktail_p, _CompareSort_f);
+		LinkNode_s *loop_p = sortfun(quickhead_p, quicktail_p, compareSort_f);
 	
 		if(loop_p != quickhead_p)
 		{
-			_QuickSort(quickhead_p, loop_p, _CompareSort_f);	
+			quickSort(quickhead_p, loop_p, compareSort_f);	
 		}
 		if(loop_p == quickhead_p)
 		{
-			_QuickSort(loop_p->next, quicktail_p, _CompareSort_f);
+			quickSort(loop_p->next, quicktail_p, compareSort_f);
 		}
 		else
 		{
-			_QuickSort(loop_p, quicktail_p, _CompareSort_f);
+			quickSort(loop_p, quicktail_p, compareSort_f);
 		}
 	}
 	
